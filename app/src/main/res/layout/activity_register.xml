@@ -27,7 +27,7 @@
             android:layout_height="0dp"
             android:layout_gravity="center"
             android:hint="Username"
-            android:text="qwe"/>
+            android:text="onur"/>
         <EditText
             android:id="@+id/pwordTB"
             android:layout_width="match_parent"

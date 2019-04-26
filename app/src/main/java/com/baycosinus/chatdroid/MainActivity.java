@@ -13,8 +13,6 @@ import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity {
 
-
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -24,7 +22,14 @@ public class MainActivity extends AppCompatActivity {
         Button registerButton = findViewById(R.id.registerButton);
 
         final TextView usernameTB = findViewById(R.id.usernameTB);
+        Bundle b = getIntent().getExtras();
+        if (b != null)
+        {
+            usernameTB.setText(b.getString("username"));
+        }
         final TextView passwordTB = findViewById(R.id.pwordTB);
+        final TextView hostTB = findViewById(R.id.ipTB);
+        final TextView portTB = findViewById(R.id.portTB);
 
         loginButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -32,11 +37,13 @@ public class MainActivity extends AppCompatActivity {
             {
                 String username = usernameTB.getText().toString();
                 String password = passwordTB.getText().toString();
-
+                String HOST = hostTB.getText().toString();
+                int PORT = Integer.parseInt(portTB.getText().toString());
                 if(username != "" || password != "")
                 {
-                    //Command c = new Command(getApplicationContext(), );
-                    //c.Login(username,password);
+                    Command c = new Command(getApplicationContext(), HOST, PORT);
+                    c.Login(username,password);
+
                 }
             }
         });

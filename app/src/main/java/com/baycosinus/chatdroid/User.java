@@ -12,4 +12,4 @@ public class User
         this.IP = IP;
         this.status = status;
     }
-}
+    }
