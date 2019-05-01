@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -38,12 +39,11 @@ public class MainActivity extends AppCompatActivity {
                 String username = usernameTB.getText().toString();
                 String password = passwordTB.getText().toString();
                 String HOST = hostTB.getText().toString();
-                int PORT = Integer.parseInt(portTB.getText().toString());
+                String PORT = portTB.getText().toString();
+
                 if(username != "" || password != "")
                 {
-                    Command c = new Command(getApplicationContext(), HOST, PORT);
-                    c.Login(username,password);
-
+                    new Task(getApplicationContext()).execute(username, password, HOST, PORT);
                 }
             }
         });
@@ -56,5 +56,29 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
+    }
+}
+class Task extends AsyncTask<String,Void, Integer>
+{
+    private Context context;
+
+    public Task(Context context)
+    {
+        this.context = context;
+    }
+    @Override
+    protected Integer doInBackground(String... strings) {
+        Command c = new Command(strings[2], strings[3]);
+        int uid = c.Login(strings[0], strings[1]);
+        return uid;
+    }
+
+    @Override
+    protected void onPostExecute(Integer uid)
+    {
+        if(uid != 0)
+        {
+            Intent intent = new Intent(context,DashboardActivity.class);
+        }
     }
 }

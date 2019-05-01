@@ -15,23 +15,22 @@ import java.util.HashMap;
 public class DashboardActivity extends AppCompatActivity {
 
     public String HOST;
-    public int PORT;
-    public String  uid;
+    public String PORT;
+    public int  uid;
     public ListView onlineList;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_dashboard);
 
-        uid  = getIntent().getStringExtra("userID");
+        uid  = getIntent().getIntExtra("userID", uid);
         HOST = getIntent().getStringExtra("HOST");
-        PORT = getIntent().getIntExtra("PORT", PORT);
+        PORT = getIntent().getStringExtra("PORT");
 
-        Log.e("Log", uid);
         Button refreshButton = findViewById(R.id.refreshButton);
         Button logoutButton = findViewById(R.id.logoutButton);
         onlineList = findViewById(R.id.onlineList);
-        final Command c = new Command(getApplicationContext(),HOST, PORT);
+        final Command c = new Command(HOST, PORT);
         RefreshList();
         logoutButton.setOnClickListener(new View.OnClickListener() {
             @Override

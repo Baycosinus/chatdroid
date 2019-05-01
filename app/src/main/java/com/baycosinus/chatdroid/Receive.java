@@ -1,41 +1,35 @@
 package com.baycosinus.chatdroid;
+
+import android.os.AsyncTask;
 import android.util.Log;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-
-
-public class NFunc
+public class Receive extends AsyncTask<Void, Void, String>
 {
-    public boolean Send(String TARGET, int PORT, String message)
+    private String HOST;
+    private String PORT;
+
+    Receive(String HOST, String PORT)
     {
-        try {
-            Socket writeSocket = new Socket(TARGET, PORT);
-            PrintWriter writer = new PrintWriter(new OutputStreamWriter(writeSocket.getOutputStream()));
-            writer.print(message);
-            writer.flush();
-            writeSocket.close();
-            return true;
-        }
-        catch (Exception e)
-        {
-            Log.e("Exception",e.toString());
-            return false;
-        }
+        this.HOST = HOST;
+        this.PORT = PORT;
     }
-    public String Receive(int PORT)
-    {
+    public interface AsyncResponse {
+        void processFinish(String output);
+    }
+
+    @Override
+    protected String doInBackground(Void... voids) {
         String response = "";
 
         try
         {
-            ServerSocket serverSocket = new ServerSocket(PORT);
+            ServerSocket serverSocket = new ServerSocket(Integer.valueOf(PORT));
             Socket socket = serverSocket.accept();
             InputStream input = socket.getInputStream();
 
@@ -52,5 +46,10 @@ public class NFunc
         }
 
         return response;
+    }
+
+    @Override
+    protected void onPostExecute(String response) {
+        super.onPostExecute(response);
     }
 }

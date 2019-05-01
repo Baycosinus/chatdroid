@@ -2,13 +2,15 @@ package com.baycosinus.chatdroid;
 
 public class User
 {
-    private final String username;
-    private final String IP;
-    private final boolean status;
+    public String username;
+    public String password;
+    public String IP;
+    public boolean status;
 
-    User(String username, String IP,boolean status)
+    User(String username, String password, String IP,boolean status)
     {
         this.username = username;
+        this.password = password;
         this.IP = IP;
         this.status = status;
     }

@@ -37,15 +37,22 @@ public class RegisterActivity extends AppCompatActivity {
                 String password = passwordTB.getText().toString();
                 String password2 = passwordTB2.getText().toString();
                 String ip = ipTB.getText().toString();
-                int port = Integer.parseInt(portTB.getText().toString());
-                Command c = new Command(getApplicationContext(), ip, port);
+                String port = portTB.getText().toString();
+                Command c = new Command(ip, port);
                 if(!password.equals(password2))
                 {
                     Toast.makeText(getApplicationContext(),"Passwords does not match.", Toast.LENGTH_LONG).show();
                 }
                 else
                 {
-                    c.UsernameAvailable(username, password);
+                    if(c.UsernameAvailable(username))
+                    {
+                        c.Register(username,password);
+                    }
+                    else
+                    {
+                        Toast.makeText(getApplicationContext(),"Username is not available.", Toast.LENGTH_LONG).show();
+                    }
                 }
                 Intent intent = new Intent(getApplicationContext(), MainActivity.class);
                 intent.putExtra("username",username);
