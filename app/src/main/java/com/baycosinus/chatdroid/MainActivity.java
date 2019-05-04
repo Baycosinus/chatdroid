@@ -1,36 +1,51 @@
 package com.baycosinus.chatdroid;
 
-import android.content.Context;
 import android.content.Intent;
-import android.net.wifi.WifiInfo;
-import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
-import android.widget.ImageView;
-import android.widget.TextView;
+import android.widget.EditText;
+import android.widget.Toast;
+
+
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.net.ServerSocket;
+import java.net.Socket;
 
 public class MainActivity extends AppCompatActivity {
+    EditText usernameTB, passwordTB, hostTB, portTB;
+    Button loginButton, registerButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
 
-        Button loginButton = findViewById(R.id.loginButton);
-        Button registerButton = findViewById(R.id.registerButton);
+        String username = getIntent().getStringExtra("username");
 
-        final TextView usernameTB = findViewById(R.id.usernameTB);
-        Bundle b = getIntent().getExtras();
-        if (b != null)
+        usernameTB = findViewById(R.id.usernameTB);
+        passwordTB = findViewById(R.id.passwordTB);
+        hostTB = findViewById(R.id.ipTB);
+        portTB = findViewById(R.id.portTB);
+
+        if (username != null && !username.isEmpty())
         {
-            usernameTB.setText(b.getString("username"));
+            usernameTB.setText(username);
         }
-        final TextView passwordTB = findViewById(R.id.pwordTB);
-        final TextView hostTB = findViewById(R.id.ipTB);
-        final TextView portTB = findViewById(R.id.portTB);
+
+        loginButton = findViewById(R.id.loginButton);
+        registerButton = findViewById(R.id.registerButton);
 
         loginButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -39,46 +54,107 @@ public class MainActivity extends AppCompatActivity {
                 String username = usernameTB.getText().toString();
                 String password = passwordTB.getText().toString();
                 String HOST = hostTB.getText().toString();
-                String PORT = portTB.getText().toString();
+                int PORT = Integer.valueOf(portTB.getText().toString());
 
-                if(username != "" || password != "")
-                {
-                    new Task(getApplicationContext()).execute(username, password, HOST, PORT);
-                }
+                Pack p = new Pack("login",new User(0,username, password, null), new User(0,null,null,null), null);
+                JSONObject pack = p.Pack2JSON();
+                new Send(HOST,PORT).execute(pack);
             }
         });
 
         registerButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(v.getContext(), RegisterActivity.class);
+                Intent intent = new Intent(getApplicationContext(), RegisterActivity.class);
                 startActivity(intent);
-
             }
         });
     }
-}
-class Task extends AsyncTask<String,Void, Integer>
-{
-    private Context context;
 
-    public Task(Context context)
+    class Send extends AsyncTask<JSONObject, Void, Boolean>
     {
-        this.context = context;
-    }
-    @Override
-    protected Integer doInBackground(String... strings) {
-        Command c = new Command(strings[2], strings[3]);
-        int uid = c.Login(strings[0], strings[1]);
-        return uid;
-    }
-
-    @Override
-    protected void onPostExecute(Integer uid)
-    {
-        if(uid != 0)
+        private String HOST;
+        private int PORT;
+        Send(String HOST, int PORT)
         {
-            Intent intent = new Intent(context,DashboardActivity.class);
+            this.HOST = HOST;
+            this.PORT = PORT;
+        }
+        @Override
+        protected Boolean doInBackground(JSONObject... packs) {
+            try {
+                Log.e("click","click");
+                Socket writeSocket = new Socket(HOST, PORT);
+                PrintWriter writer = new PrintWriter(new OutputStreamWriter(writeSocket.getOutputStream()));
+                writer.print(packs[0]);
+                writer.flush();
+                writeSocket.close();
+                return true;
+            }
+            catch (Exception e)
+            {
+                Log.e("AsyncSend Exception",e.toString());
+                return false;
+            }
+        }
+
+        @Override
+        protected void onPostExecute(Boolean aBoolean)
+        {
+            if(aBoolean)
+            {
+                new Listen(PORT).execute();
+            }
+        }
+    }
+
+    class Listen extends AsyncTask<Void, Void, String>
+    {
+        private int PORT;
+        Listen(int PORT)
+        {
+            this.PORT = PORT;
+        }
+        @Override
+        protected String doInBackground(Void... voids) {
+            String response = "";
+
+            try
+            {
+                ServerSocket serverSocket = new ServerSocket(Integer.valueOf(PORT));
+                serverSocket.setReuseAddress(true);
+                Socket socket = serverSocket.accept();
+                InputStream input = socket.getInputStream();
+
+                BufferedReader reader = new BufferedReader(new InputStreamReader(input));
+                response = reader.readLine();
+                reader.close();
+                socket.close();
+                serverSocket.close();
+            }
+            catch (Exception e)
+            {
+                Log.e("Async Listen Exception",e.toString());
+            }
+            return response;
+        }
+
+        @Override
+        protected void onPostExecute(String s) {
+            int result = Integer.valueOf(s);
+            if(result != 0)
+            {
+                Intent intent = new Intent(getApplicationContext(), DashboardActivity.class);
+                intent.putExtra("uid", s);
+                intent.putExtra("HOST",hostTB.getText().toString());
+                intent.putExtra("PORT", portTB.getText().toString());
+                startActivity(intent);
+            }
+            else
+            {
+                Toast.makeText(getApplicationContext(),"Login failed.", Toast.LENGTH_LONG).show();
+            }
+
         }
     }
 }
