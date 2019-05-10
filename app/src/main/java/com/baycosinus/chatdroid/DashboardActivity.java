@@ -6,11 +6,13 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
+import android.widget.TextView;
 import android.widget.Toast;
 
 
@@ -34,16 +36,17 @@ public class DashboardActivity extends AppCompatActivity {
 
     public ListView onlineList;
     public List<User> userList = new ArrayList<>();
+    public int userID;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_dashboard);
 
-        final int id = Integer.valueOf(getIntent().getStringExtra("uid"));
+        userID = Integer.valueOf(getIntent().getStringExtra("uid"));
         final String HOST = getIntent().getStringExtra("HOST");
         final int PORT = Integer.valueOf(getIntent().getStringExtra("PORT"));
 
-        Toast.makeText(getApplicationContext(),"UID:" + String.valueOf(id), Toast.LENGTH_LONG).show();
+        Toast.makeText(getApplicationContext(),"UID:" + String.valueOf(userID), Toast.LENGTH_LONG).show();
 
         Button refreshButton = findViewById(R.id.refreshButton);
         Button logoutButton = findViewById(R.id.logoutButton);
@@ -52,7 +55,7 @@ public class DashboardActivity extends AppCompatActivity {
         logoutButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Pack p = new Pack("logout", new User(id, null,null,null), new User(0,null,null,null), null);
+                Pack p = new Pack("logout", new User(userID, null,null,null), new User(0,null,null,null), null);
                 JSONObject pack = p.Pack2JSON();
                 new Send(HOST,PORT).execute(pack);
                 Intent intent = new Intent(getApplicationContext(), MainActivity.class);
@@ -64,7 +67,7 @@ public class DashboardActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 onlineList.setAdapter(null);
-                Pack p = new Pack("get_online", new User(id,null,null,null), new User(0,null,null,null),null);
+                Pack p = new Pack("get_online", new User(userID,null,null,null), new User(0,null,null,null),null);
                 JSONObject pack = p.Pack2JSON();
                 new Send(HOST,PORT).execute(pack);
             }
@@ -181,6 +184,18 @@ public class DashboardActivity extends AppCompatActivity {
                 }
 
                 onlineList.setAdapter(adapter);
+                onlineList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                    @Override
+                    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                        Log.e("test","click");
+                        TextView ipTV = (TextView) view.findViewById(R.id.SecondLine);
+                        String ip = ipTV.getText().toString();
+                        Intent intent = new Intent(getApplicationContext(), ChatActivity.class);
+                        intent.putExtra("ip", ip);
+                        intent.putExtra("me",String.valueOf(userID));
+                        startActivity(intent);
+                    }
+                });
             }
             catch (Exception e)
             {
