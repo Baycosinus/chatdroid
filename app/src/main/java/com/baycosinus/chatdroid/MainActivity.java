@@ -83,7 +83,6 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected Boolean doInBackground(JSONObject... packs) {
             try {
-                Log.e("click","click");
                 Socket writeSocket = new Socket(HOST, PORT);
                 PrintWriter writer = new PrintWriter(new OutputStreamWriter(writeSocket.getOutputStream()));
                 writer.print(packs[0]);
@@ -101,6 +100,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(Boolean aBoolean)
         {
+
             if(aBoolean)
             {
                 new Listen(PORT).execute();
@@ -121,6 +121,7 @@ public class MainActivity extends AppCompatActivity {
 
             try
             {
+                Log.e("test", "test");
                 ServerSocket serverSocket = new ServerSocket(Integer.valueOf(PORT));
                 serverSocket.setReuseAddress(true);
                 Socket socket = serverSocket.accept();
@@ -128,6 +129,7 @@ public class MainActivity extends AppCompatActivity {
 
                 BufferedReader reader = new BufferedReader(new InputStreamReader(input));
                 response = reader.readLine();
+                Log.e("Result", response);
                 reader.close();
                 socket.close();
                 serverSocket.close();
