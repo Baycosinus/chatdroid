@@ -37,12 +37,14 @@ public class DashboardActivity extends AppCompatActivity {
     public ListView onlineList;
     public List<User> userList = new ArrayList<>();
     public int userID;
+    public String username;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_dashboard);
 
         userID = Integer.valueOf(getIntent().getStringExtra("uid"));
+        username = getIntent().getStringExtra("username");
         final String HOST = getIntent().getStringExtra("HOST");
         final int PORT = Integer.valueOf(getIntent().getStringExtra("PORT"));
 
@@ -108,16 +110,18 @@ public class DashboardActivity extends AppCompatActivity {
         {
             if(aBoolean)
             {
-                new DashboardActivity.Listen(PORT).execute();
+                new DashboardActivity.Listen(HOST,PORT).execute();
             }
         }
     }
 
     class Listen extends AsyncTask<Void, Void, JSONObject>
     {
+        private String HOST;
         private int PORT;
-        Listen(int PORT)
+        Listen(String HOST, int PORT)
         {
+            this.HOST = HOST;
             this.PORT = PORT;
         }
         @Override
@@ -187,12 +191,12 @@ public class DashboardActivity extends AppCompatActivity {
                 onlineList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                     @Override
                     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                        Log.e("test","click");
-                        TextView ipTV = (TextView) view.findViewById(R.id.SecondLine);
-                        String ip = ipTV.getText().toString();
+                        TextView otherTV = (TextView) view.findViewById(R.id.FirstLine);
+                        String other = otherTV.getText().toString();
                         Intent intent = new Intent(getApplicationContext(), ChatActivity.class);
-                        intent.putExtra("ip", ip);
-                        intent.putExtra("me",String.valueOf(userID));
+                        intent.putExtra("ip", HOST);
+                        intent.putExtra("other", other);
+                        intent.putExtra("username",username);
                         startActivity(intent);
                     }
                 });

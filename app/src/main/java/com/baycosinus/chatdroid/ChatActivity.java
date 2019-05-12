@@ -1,15 +1,20 @@
 package com.baycosinus.chatdroid;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import org.json.JSONArray;
@@ -31,11 +36,11 @@ import java.util.Map;
 public class ChatActivity extends AppCompatActivity {
 
     String ip = "";
-    int me = 0;
-    int other = 0;
+    String me = "";
+    String other = "";
     int PORT = 8888;
 
-    ListView chat;
+    LinearLayout chatContainer;
     List<String[]> msgList = new ArrayList<>();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,22 +48,28 @@ public class ChatActivity extends AppCompatActivity {
         setContentView(R.layout.activity_chat);
 
         ip = getIntent().getStringExtra("ip");
-        me = Integer.valueOf(getIntent().getStringExtra("me"));
+        me = getIntent().getStringExtra("username");
+        other = getIntent().getStringExtra("other");
+
+        Toast.makeText(getApplicationContext(), ip + "," + me + "," + other, Toast.LENGTH_LONG).show();
         final EditText msgTB = findViewById(R.id.msgTB);
         Button sendButton = findViewById(R.id.sendButton);
-        chat = findViewById(R.id.chatList);
+        chatContainer = findViewById(R.id.messageContainer);
         sendButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 String message = msgTB.getText().toString();
-                Pack p = new Pack("message", new User(me,null,null, null), new User(other,null,null,null), message );
-                JSONObject pack = p.Pack2JSON();
-                msgTB.setText("");
-                String[] msg = new String[]{String.valueOf(me), message};
-                msgList.add(msg);
-                new Send(ip, PORT).execute(pack);
-                RefreshChat();
-                Log.e("Size", String.valueOf(msgList.size()));
+                if(!msgTB.getText().equals(null) || !msgTB.getText().equals(""))
+                {
+                    Pack p = new Pack("send_message", new User(0,me,null, null), new User(0,other,null,null), message );
+                    JSONObject pack = p.Pack2JSON();
+                    msgTB.setText("");
+                    String[] msg = new String[]{me, message};
+                    msgList.add(msg);
+                    new Send(ip, PORT).execute(pack);
+                    RefreshChat();
+                    Log.e("Size", String.valueOf(msgList.size()));
+                }
             }
         });
 
@@ -66,41 +77,42 @@ public class ChatActivity extends AppCompatActivity {
         refreshButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                new Listen(PORT).execute();
+                Pack p = new Pack("receive_message", new User(0,me,null, null), new User(0,other,null,null), null );
+                JSONObject pack = p.Pack2JSON();
+                new Send(ip,PORT).execute(pack);
             }
         });
-
+        refreshButton.performClick();
+        RefreshChat();
     }
     void RefreshChat()
     {
-        try
+        chatContainer.removeAllViews();
+        for(String[] s: msgList)
         {
-            chat.setAdapter(null);
-            HashMap<String,String> msgs = new HashMap<>();
-            for (int k = 0; k < msgList.size(); k++)
+            LayoutInflater li = (LayoutInflater) getApplicationContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+            View message = li.inflate(R.layout.message_bubble, null);
+            TextView messageText = message.getRootView().findViewById(R.id.msgText);
+            messageText.setText(s[1]);
+            LinearLayout msgBubble = message.findViewById(R.id.bubbleLayout);
+            if(s[0].equals(String.valueOf(me)))
             {
-                msgs.put(msgList.get(k)[0], msgList.get(k)[1]);
+                msgBubble.setGravity(Gravity.RIGHT);
+                messageText.setBackgroundColor(getResources().getColor(R.color.outgoingMessage));
             }
-            List<HashMap<String,String>> listItems = new ArrayList<>();
-
-            SimpleAdapter adapter = new SimpleAdapter(getApplicationContext(),listItems, R.layout.message_bubble, new String[]{"MessageText"}, new int[]{R.id.msgText});
-
-            Iterator it = msgs.entrySet().iterator();
-            while(it.hasNext())
+            if(s[0].equals(String.valueOf(other)))
             {
-                HashMap<String,String> resultsMap = new HashMap<>();
-                Map.Entry pair = (Map.Entry)it.next();
-                resultsMap.put("MessageText", pair.getValue().toString());
-                listItems.add(resultsMap);
+                msgBubble.setGravity(Gravity.LEFT);
+                messageText.setBackgroundColor(getResources().getColor(R.color.incomingMessage));
+            }
+            if(chatContainer.getChildCount() != msgList.size())
+            {
+                chatContainer.addView(message);
             }
 
-            chat.setAdapter(adapter);
-        }
-        catch (Exception e)
-        {
-            Log.e("Exception", e.getLocalizedMessage());
         }
     }
+
     class Send extends AsyncTask<JSONObject, Void, Boolean>
     {
         private String HOST;
@@ -133,16 +145,18 @@ public class ChatActivity extends AppCompatActivity {
 
             if(aBoolean)
             {
-                new Listen(PORT).execute();
+                new Listen(HOST,PORT).execute();
             }
         }
     }
 
     class Listen extends AsyncTask<Void, Void, String>
     {
+        private String HOST;
         private int PORT;
-        Listen(int PORT)
+        Listen(String HOST,int PORT)
         {
+            this.HOST = HOST;
             this.PORT = PORT;
         }
         @Override
@@ -159,8 +173,27 @@ public class ChatActivity extends AppCompatActivity {
 
                 BufferedReader reader = new BufferedReader(new InputStreamReader(input));
                 response = reader.readLine();
-                String[] value = new String[]{String.valueOf(other), response};
-                msgList.add(value);
+                Log.e("MSG",response);
+                if(!response.equals("[]")) {
+                    msgList.clear();
+                    response = response.replace("[","");
+                    response = response.replace("]","");
+                    response = response.replace(")","");
+                    response = response.replace("(","");
+                    Log.e("response",response);
+                    String[] values = response.split(",");
+                    for(int i = 0; i < values.length; i+=4)
+                    {
+                        String user = values[i+1].replace("'","");
+                        user = user.replace(" ","");
+                        String msg = values[i+3].replace("'","");
+                        Log.e(">", "From:" + user + ", " + "Message:" + msg);
+                        String[] message = new String[]{user,msg};
+                        msgList.add(message);
+
+                    }
+                }
+                else{}
                 reader.close();
                 socket.close();
                 serverSocket.close();

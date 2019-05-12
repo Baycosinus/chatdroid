@@ -148,6 +148,7 @@ public class MainActivity extends AppCompatActivity {
             {
                 Intent intent = new Intent(getApplicationContext(), DashboardActivity.class);
                 intent.putExtra("uid", s);
+                intent.putExtra("username",usernameTB.getText().toString());
                 intent.putExtra("HOST",hostTB.getText().toString());
                 intent.putExtra("PORT", portTB.getText().toString());
                 startActivity(intent);
